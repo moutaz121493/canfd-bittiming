@@ -1,0 +1,31 @@
+name: ci
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+        mode: [release, sanitize]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: build + test (${{ matrix.cc }}, ${{ matrix.mode }})
+        env:
+          CC: ${{ matrix.cc }}
+        run: |
+          if [ "${{ matrix.mode }}" = sanitize ]; then
+            make test CFLAGS="-std=c99 -O1 -g -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" \
+                      LDLIBS="-lm -fsanitize=address,undefined"
+          else
+            make all test
+            ./canfd-bt 40 500 80 2000 75
+          fi

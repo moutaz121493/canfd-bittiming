@@ -1,0 +1,4 @@
+*.o
+*.a
+canfd-bt
+tests/test_bittiming
